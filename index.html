@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Raízes do Nordeste - Peça seu prato favorito com facilidade.">
+    <title>Raízes do Nordeste | Pedidos</title>
+    <!-- Google Fonts: Inter -> Premium Modern Look -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="dark-mode">
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="logo">
+            <span class="icon">🌵</span> Raízes do Nordeste
+        </div>
+        <div class="nav-actions">
+            <!-- Theme Toggle -->
+            <button id="theme-toggle" class="btn-icon" aria-label="Alterar Tema">☀️</button>
+            <!-- Cart Icon com Badge -->
+            <button id="cart-toggle" class="btn-icon cart-trigger" aria-label="Abrir Carrinho">
+                🛒 <span id="cart-badge" class="badge">0</span>
+            </button>
+            <button id="auth-btn" class="btn-primary-small">Entrar</button>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <main id="app-container" class="container">
+        
+        <!-- View: Cardápio (Padrão) -->
+        <section id="view-menu" class="view active">
+            
+            <header class="home-header">
+                <h1>O que você vai comer hoje visse?</h1>
+                <p>Descubra o verdadeiro sabor do tempero nordestino.</p>
+            </header>
+
+            <!-- Categorias Horizontais -->
+            <div class="categories-container">
+                <ul id="categories-list" class="scroll-horizontal">
+                    <!-- Gerado via JS -->
+                </ul>
+            </div>
+
+            <!-- Lista de Produtos -->
+            <div class="products-grid" id="products-grid">
+                <!-- Gerado via JS -->
+            </div>
+        </section>
+
+        <!-- View: Carrinho & Resumo -->
+        <section id="view-cart" class="view hidden">
+            <div class="view-header">
+                <button class="back-btn" onclick="app.showView('view-menu')">⬅ Voltar</button>
+                <h2>Seu Pedido</h2>
+            </div>
+            
+            <div id="cart-items" class="cart-items-list">
+                <!-- Itens gerados via JS -->
+                <p class="empty-msg">Seu carrinho está vazio.</p>
+            </div>
+
+            <!-- Banner de Fidelidade -->
+            <div class="loyalty-banner" id="loyalty-banner" style="display: none;">
+                <div class="loyalty-info">
+                    <span class="icon">⭐</span>
+                    <div>
+                        <strong>Programa de Pontos</strong>
+                        <p>Você tem <span id="user-points">0</span> pontos.</p>
+                    </div>
+                </div>
+                <button id="apply-discount-btn" class="btn-secondary">Usar Desconto</button>
+            </div>
+
+            <div class="cart-summary">
+                <div class="summary-line">
+                    <span>Subtotal</span>
+                    <span id="cart-subtotal">R$ 0,00</span>
+                </div>
+                <!-- Desconto se aplicado -->
+                <div class="summary-line discount-line hidden" id="discount-display">
+                    <span>Desconto (Fidelidade)</span>
+                    <span id="cart-discount">- R$ 0,00</span>
+                </div>
+                <div class="summary-line total-line">
+                    <span>Total</span>
+                    <span id="cart-total">R$ 0,00</span>
+                </div>
+                <button class="btn-primary max-width" id="checkout-btn">Finalizar e Pagar</button>
+            </div>
+        </section>
+
+        <!-- View: Pagamento Externo (Mock) -->
+        <section id="view-payment" class="view hidden center-content">
+            <div class="payment-modal">
+                <div class="view-header">
+                    <button class="back-btn" onclick="app.showView('view-cart')">⬅ Voltar</button>
+                    <h2>Pagamento</h2>
+                </div>
+                <p class="text-muted">Total a pagar: <strong id="pay-total-amount" class="text-accent">R$ 0,00</strong></p>
+                
+                <div class="payment-options">
+                    <button class="btn-pay apple" onclick="app.processPayment('Apple/Google Pay')">💳 Pagar com Apple Pay</button>
+                    <button class="btn-pay pix" onclick="app.processPayment('Pix')">❖ Pagar com Pix</button>
+                    <button class="btn-pay card" onclick="app.processPayment('Cartão de Crédito')">🛒 Pagar com Cartão</button>
+                </div>
+
+                <div id="payment-loader" class="loader hidden">
+                    <div class="spinner"></div>
+                    <p>Processando pagamento junto à operadora...</p>
+                </div>
+                
+                <div id="payment-success" class="success-message hidden">
+                    <div class="check-icon">✓</div>
+                    <h3>Pagamento Aprovado!</h3>
+                    <p>Seu pedido está sendo preparado na cozinha.</p>
+                    <button class="btn-primary mt-2" onclick="app.closeOrder()">Acompanhar Pedido</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- View: Status do Pedido -->
+        <section id="view-status" class="view hidden center-content">
+            <h2>Status do Pedido #<span id="order-number">0000</span></h2>
+            <div class="status-tracker">
+                <div class="step active">Recebido</div>
+                <div class="step">Preparando</div>
+                <div class="step">Pronto para Retirada</div>
+            </div>
+            <p class="mt-2 text-muted">Você ganhou <span id="earned-points" class="text-accent">0</span> pontos com esta compra!</p>
+            <button class="btn-secondary mt-2" onclick="window.location.reload()">Novo Pedido</button>
+        </section>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>Desenvolvido por <strong>Lucas Mohamed</strong></p>
+            <p>Contato: <a href="https://wa.me/5574998055842" target="_blank" class="footer-link">📱 (74) 99805-5842</a></p>
+        </footer>
+
+    </main>
+
+    <!-- Barra de Navegação Inferior (Mobile App Feel) -->
+    <nav class="bottom-nav">
+        <a href="#" class="nav-item active" onclick="app.showView('view-menu')">
+            <span>🏠</span>
+            <small>Início</small>
+        </a>
+        <a href="#" class="nav-item" onclick="app.toggleAuthMock()">
+            <span>👤</span>
+            <small>Perfil</small>
+        </a>
+        <a href="#" class="nav-item cart-trigger" onclick="app.showView('view-cart')">
+            <span>🛒</span>
+            <small>Carrinho</small>
+        </a>
+    </nav>
+
+    <!-- LGPD Consent Banner -->
+    <div id="lgpd-banner" class="lgpd-banner hidden">
+        <div class="lgpd-content">
+            <p><strong>Sua Privacidade Importa!</strong> Usamos cookies e dados de formulário para gerenciar seu carrinho e seus pontos do programa de fidelidade. Ao continuar, você concorda com nossa Política de Privacidade nos termos da <strong>LGPD</strong>.</p>
+            <div class="lgpd-actions">
+                <button class="btn-ghost" id="lgpd-decline">Recusar</button>
+                <button class="btn-primary-small" id="lgpd-accept">Entendi e Aceito</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/data.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
