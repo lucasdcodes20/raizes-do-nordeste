@@ -57,7 +57,7 @@ const restaurantData = {
             name: "Acarajé (Porção com 4)",
             description: "Mini acarajés fritos no azeite de dendê, servidos com vatapá, caruru e camarão seco.",
             price: 35.00,
-            image: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Acaraj%C3%A9_Baiano.jpg/800px-Acaraj%C3%A9_Baiano.jpg"
+            image: "https://t2.rg.ltmcdn.com/pt/posts/9/5/6/acaraje_baiano_tradicional_8659_600.jpg?breakcache=1"
         },
         {
             id: "d1",
