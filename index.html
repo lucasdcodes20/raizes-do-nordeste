@@ -36,6 +36,13 @@
             <header class="home-header">
                 <h1>O que você vai comer hoje visse?</h1>
                 <p>Descubra o verdadeiro sabor do tempero nordestino.</p>
+                <div class="unit-selector">
+                    <label for="store-unit">📍 Unidade:</label>
+                    <select id="store-unit" onchange="app.changeUnit()">
+                        <option value="matriz">Matriz (Centro)</option>
+                        <option value="shopping">Filial (Shopping)</option>
+                    </select>
+                </div>
             </header>
 
             <!-- Categorias Horizontais -->

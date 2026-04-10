@@ -76,6 +76,17 @@ const app = {
         }
     },
 
+    // Troca de Unidade
+    changeUnit() {
+        const unit = document.getElementById('store-unit').value;
+        this.productsGrid.innerHTML = '<div class="loader"><div class="spinner"></div><p>Carregando cardápio da unidade...</p></div>';
+        setTimeout(() => {
+            const unitName = unit === 'matriz' ? 'Centro' : 'Shopping Barra';
+            alert(`Você mudou para a unidade: ${unitName}. Algumas promoções podem diferir.`);
+            this.renderProducts('principais');
+        }, 600);
+    },
+
     // Renderização Dinâmica (Cardápio)
     renderCategories() {
         this.categoriesList.innerHTML = '';

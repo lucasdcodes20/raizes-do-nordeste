@@ -210,3 +210,7 @@ button {
     font-size: 0.75rem; font-weight: 800; padding: 0.3rem 0.6rem;
     border-radius: var(--radius-md); margin-bottom: 0.5rem; align-self: flex-start;
 }
+
+/* Unit Selector */
+.unit-selector { margin-top: 1rem; display: flex; align-items: center; gap: 0.5rem; font-weight: 600; }
+.unit-selector select { padding: 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); color: var(--text-color); font-weight: 500; outline: none; }
