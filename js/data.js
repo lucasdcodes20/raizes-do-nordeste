@@ -54,10 +54,10 @@ const restaurantData = {
         {
             id: "p5",
             categoryId: "porcoes",
-            name: "Acarajé (Porção com 4)",
+            name: "Acarajé Genuíno (Porção com 4)",
             description: "Mini acarajés fritos no azeite de dendê, servidos com vatapá, caruru e camarão seco.",
             price: 35.00,
-            image: "assets/acaraje_novo.jpg"
+            image: "https://www.correio24horas.com.br/fileadmin/_processed_/b/5/csm_acaraje_f4ebf2e7c4.jpg?v=" + Date.now()
         },
         {
             id: "d1",

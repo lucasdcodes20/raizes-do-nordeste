@@ -43,7 +43,19 @@
                         <option value="shopping">Filial (Shopping)</option>
                     </select>
                 </div>
+                <!-- Banner de Unidade Selecionada -->
+                <div id="active-unit-banner" class="active-unit-banner">
+                    Você está comprando na <span id="current-unit-name">Matriz (Centro)</span>
+                </div>
             </header>
+
+            <!-- Seção de Promoções e Campanhas -->
+            <div class="promotions-container">
+                <h2 class="section-title">🔥 Ofertas Arretadas</h2>
+                <div id="promotions-grid" class="promotions-grid">
+                    <!-- Gerado via JS -->
+                </div>
+            </div>
 
             <!-- Categorias Horizontais -->
             <div class="categories-container">
@@ -141,6 +153,30 @@
             <button class="btn-secondary mt-2" onclick="window.location.reload()">Novo Pedido</button>
         </section>
 
+        <!-- View: Perfil do Usuário (Novo) -->
+        <section id="view-profile" class="view hidden">
+            <div class="view-header">
+                <button class="back-btn" onclick="app.showView('view-menu')">⬅ Voltar</button>
+                <h2>Meu Perfil</h2>
+            </div>
+            <div class="profile-card">
+                <div class="profile-header">
+                    <div class="avatar">👤</div>
+                    <div>
+                        <h3 id="profile-name">Nome do Usuário</h3>
+                        <p class="text-muted" id="profile-email">email@exemplo.com</p>
+                    </div>
+                </div>
+                <div class="profile-details">
+                    <div class="detail-item"><strong>📍 Endereço:</strong> <span id="profile-address">-</span></div>
+                    <div class="detail-item"><strong>📱 Telefone:</strong> <span id="profile-phone">-</span></div>
+                    <div class="detail-item"><strong>🆔 CPF:</strong> <span id="profile-cpf">-</span></div>
+                    <div class="detail-item"><strong>⭐ Pontos Fidelidade:</strong> <span id="profile-points">0</span></div>
+                </div>
+                <button class="btn-secondary max-width mt-2" onclick="app.toggleAuthMock()">Sair da Conta</button>
+            </div>
+        </section>
+
         <!-- Footer -->
         <footer class="app-footer">
             <p>Desenvolvido por <strong>Lucas Mohamed</strong></p>
@@ -155,7 +191,7 @@
             <span>🏠</span>
             <small>Início</small>
         </a>
-        <a href="#" class="nav-item" onclick="app.toggleAuthMock()">
+        <a href="#" class="nav-item" onclick="app.showView('view-profile')">
             <span>👤</span>
             <small>Perfil</small>
         </a>
@@ -179,5 +215,44 @@
     <!-- Scripts -->
     <script src="js/data.js"></script>
     <script src="js/app.js"></script>
+
+    <!-- Modal de Autenticação (Cadastro/Login) -->
+    <div id="auth-modal" class="modal hidden">
+        <div class="modal-content">
+            <button class="close-modal" aria-label="Fechar" onclick="app.closeAuthModal()">×</button>
+            <div id="auth-form-container">
+                <h2 id="auth-modal-title">Bem-vindo visse?</h2>
+                <p id="auth-modal-desc">Faça seu login ou crie sua conta para ganhar pontos.</p>
+                <form id="auth-form" onsubmit="app.handleAuthSubmit(event)">
+                    <div class="form-group" id="name-group">
+                        <label for="user-name">Nome Completo</label>
+                        <input type="text" id="user-name" placeholder="Como quer ser chamado?">
+                    </div>
+                    <div class="form-group" id="phone-group">
+                        <label for="user-phone">Telefone / WhatsApp</label>
+                        <input type="tel" id="user-phone" placeholder="(00) 00000-0000">
+                    </div>
+                    <div class="form-group">
+                        <label for="user-email">E-mail</label>
+                        <input type="email" id="user-email" required placeholder="seu@email.com">
+                    </div>
+                    <div class="form-group" id="cpf-group">
+                        <label for="user-cpf">CPF</label>
+                        <input type="text" id="user-cpf" placeholder="000.000.000-00">
+                    </div>
+                    <div class="form-group" id="address-group">
+                        <label for="user-address">Endereço Completo</label>
+                        <textarea id="user-address" rows="3" placeholder="Rua, número, bairro e ponto de referência"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="user-pass">Senha</label>
+                        <input type="password" id="user-pass" required placeholder="********">
+                    </div>
+                    <button type="submit" class="btn-primary" id="auth-submit-btn">Entrar</button>
+                </form>
+                <p class="auth-switch">Ainda não tem conta? <a href="#" onclick="app.switchAuthMode('register')">Cadastre-se</a></p>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

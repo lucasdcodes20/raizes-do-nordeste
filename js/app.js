@@ -3,7 +3,15 @@
 const app = {
     state: {
         cart: [],
-        user: { isAuthenticated: false, points: 150 }, // Mock user info
+        user: { 
+            isAuthenticated: false, 
+            points: 0,
+            name: '',
+            email: '',
+            phone: '',
+            cpf: '',
+            address: ''
+        },
         discountApplied: false,
         theme: 'dark'
     },
@@ -11,25 +19,46 @@ const app = {
     init() {
         this.cacheDOM();
         this.bindEvents();
+        this.loadSession(); // Carrega usuário se existir
         this.renderCategories();
         this.renderProducts('principais');
+        this.renderPromotions();
         this.checkLGPD();
         this.updateCartBadge();
+    },
+
+    loadSession() {
+        const savedUser = localStorage.getItem('raizes_user_session');
+        if (savedUser) {
+            this.state.user = JSON.parse(savedUser);
+            document.getElementById('auth-btn').textContent = 'Sair';
+        }
     },
 
     cacheDOM() {
         this.themeToggle = document.getElementById('theme-toggle');
         this.categoriesList = document.getElementById('categories-list');
         this.productsGrid = document.getElementById('products-grid');
+        this.promotionsGrid = document.getElementById('promotions-grid');
         this.cartBadge = document.getElementById('cart-badge');
         this.cartItemsList = document.getElementById('cart-items');
         this.views = document.querySelectorAll('.view');
         this.lgpdBanner = document.getElementById('lgpd-banner');
+        this.authModal = document.getElementById('auth-modal');
     },
 
     bindEvents() {
         this.themeToggle.addEventListener('click', () => this.toggleTheme());
         
+        // Auth
+        document.getElementById('auth-btn').addEventListener('click', () => {
+            if(this.state.user.isAuthenticated) {
+                this.toggleAuthMock();
+            } else {
+                this.openAuthModal('login');
+            }
+        });
+
         // Modal Payment mock
         document.getElementById('checkout-btn').addEventListener('click', () => {
             if(this.state.cart.length === 0) return alert("Carrinho vazio!");
@@ -51,14 +80,21 @@ const app = {
 
     // Controle de Views
     showView(viewId) {
+        if(viewId === 'view-profile' && !this.state.user.isAuthenticated) {
+            this.openAuthModal('login');
+            return;
+        }
+
         this.views.forEach(v => v.classList.add('hidden'));
         document.getElementById(viewId).classList.remove('hidden');
         
         if (viewId === 'view-cart') this.renderCart();
+        if (viewId === 'view-profile') this.renderProfile();
         
         // Atualiza Nav Bottom ativo
         document.querySelectorAll('.bottom-nav .nav-item').forEach(item => item.classList.remove('active'));
         if(viewId === 'view-menu') document.querySelectorAll('.bottom-nav .nav-item')[0].classList.add('active');
+        if(viewId === 'view-profile') document.querySelectorAll('.bottom-nav .nav-item')[1].classList.add('active');
         if(viewId === 'view-cart') document.querySelectorAll('.bottom-nav .nav-item')[2].classList.add('active');
     },
 
@@ -79,15 +115,45 @@ const app = {
     // Troca de Unidade
     changeUnit() {
         const unit = document.getElementById('store-unit').value;
+        const bannerName = document.getElementById('current-unit-name');
+        
         this.productsGrid.innerHTML = '<div class="loader"><div class="spinner"></div><p>Carregando cardápio da unidade...</p></div>';
+        
         setTimeout(() => {
-            const unitName = unit === 'matriz' ? 'Centro' : 'Shopping Barra';
-            alert(`Você mudou para a unidade: ${unitName}. Algumas promoções podem diferir.`);
+            const unitName = unit === 'matriz' ? 'Matriz (Centro)' : 'Filial (Shopping Barra)';
+            bannerName.textContent = unitName;
             this.renderProducts('principais');
         }, 600);
     },
 
-    // Renderização Dinâmica (Cardápio)
+    // Renderização Dinâmica (Cardápio & Promoções)
+    renderPromotions() {
+        if(!this.promotionsGrid) return;
+        this.promotionsGrid.innerHTML = '';
+        restaurantData.promotions.forEach(promo => {
+            this.promotionsGrid.innerHTML += `
+                <div class="promo-card">
+                    <div>
+                        <h3>${promo.title}</h3>
+                        <p>${promo.description}</p>
+                    </div>
+                    <div>
+                        <span class="promo-price">R$ ${promo.price.toFixed(2).replace('.', ',')}</span>
+                        <button class="btn-primary-small mt-2" onclick="app.addPromoToCart('${promo.id}')">Pedir Combo</button>
+                    </div>
+                </div>
+            `;
+        });
+    },
+
+    addPromoToCart(promoId) {
+        const promo = restaurantData.promotions.find(p => p.id === promoId);
+        alert(`Combo "${promo.title}" adicionado! (Simulação de múltiplos itens)`);
+        // Aqui simulamos adicionar os itens do combo
+        this.addToCart('p1'); // Baião
+        this.showView('view-cart');
+    },
+
     renderCategories() {
         this.categoriesList.innerHTML = '';
         restaurantData.categories.forEach((cat, index) => {
@@ -226,19 +292,104 @@ const app = {
         document.getElementById('pay-total-amount').textContent = `R$ ${total.toFixed(2).replace('.', ',')}`;
     },
 
-    // Fidelidade / Usuário Mocados
-    toggleAuthMock() {
-        this.state.user.isAuthenticated = !this.state.user.isAuthenticated;
-        document.getElementById('auth-btn').textContent = this.state.user.isAuthenticated ? 'Sair' : 'Entrar';
-        if(this.state.user.isAuthenticated) {
-            alert('Você fez login! (Mock Auth). Você possui 150 pontos.');
-            this.state.user.points = 150;
+    // Fidelidade / Autenticação Robusta (Mock)
+    openAuthModal(mode = 'login') {
+        this.authModal.classList.remove('hidden');
+        this.switchAuthMode(mode);
+    },
+
+    closeAuthModal() {
+        this.authModal.classList.add('hidden');
+    },
+
+    switchAuthMode(mode) {
+        const title = document.getElementById('auth-modal-title');
+        const desc = document.getElementById('auth-modal-desc');
+        const submitBtn = document.getElementById('auth-submit-btn');
+        const switchText = document.querySelector('.auth-switch');
+        
+        // Grupos de campos extras
+        const nameGroup = document.getElementById('name-group');
+        const phoneGroup = document.getElementById('phone-group');
+        const cpfGroup = document.getElementById('cpf-group');
+        const addressGroup = document.getElementById('address-group');
+
+        if(mode === 'register') {
+            title.textContent = 'Crie sua conta';
+            desc.textContent = 'Cadastre-se para acumular pontos em cada pedido.';
+            submitBtn.textContent = 'Cadastrar';
+            [nameGroup, phoneGroup, cpfGroup, addressGroup].forEach(g => g.classList.remove('hidden'));
+            switchText.innerHTML = 'Já tem conta? <a href="#" onclick="app.switchAuthMode(\'login\')">Faça Login</a>';
         } else {
-            this.state.discountApplied = false;
-            this.state.user.points = 0;
+            title.textContent = 'Bem-vindo visse?';
+            desc.textContent = 'Faça seu login para gerenciar seus pedidos.';
+            submitBtn.textContent = 'Entrar';
+            [nameGroup, phoneGroup, cpfGroup, addressGroup].forEach(g => g.classList.add('hidden'));
+            switchText.innerHTML = 'Ainda não tem conta? <a href="#" onclick="app.switchAuthMode(\'register\')">Cadastre-se</a>';
         }
-        if(!document.getElementById('view-cart').classList.contains('hidden')){
-            this.renderCart();
+    },
+
+    handleAuthSubmit(e) {
+        e.preventDefault();
+        const mode = document.getElementById('auth-submit-btn').textContent === 'Cadastrar' ? 'register' : 'login';
+        
+        const email = document.getElementById('user-email').value;
+        const pass = document.getElementById('user-pass').value;
+
+        if (mode === 'register') {
+            this.state.user = {
+                isAuthenticated: true,
+                points: 150,
+                name: document.getElementById('user-name').value,
+                email: email,
+                phone: document.getElementById('user-phone').value,
+                cpf: document.getElementById('user-cpf').value,
+                address: document.getElementById('user-address').value
+            };
+        } else {
+            // Mock Login (aceita qualquer coisa se não houver cadastro salvo)
+            const saved = localStorage.getItem('raizes_user_session');
+            if (saved) {
+                this.state.user = JSON.parse(saved);
+                this.state.user.isAuthenticated = true;
+            } else {
+                this.state.user = {
+                    isAuthenticated: true,
+                    points: 50,
+                    name: email.split('@')[0],
+                    email: email,
+                    phone: '-',
+                    cpf: '-',
+                    address: '-'
+                };
+            }
+        }
+
+        localStorage.setItem('raizes_user_session', JSON.stringify(this.state.user));
+        document.getElementById('auth-btn').textContent = 'Sair';
+        this.closeAuthModal();
+        this.showView('view-profile');
+        alert(`Bem-vindo(a), ${this.state.user.name}!`);
+    },
+
+    renderProfile() {
+        if (!this.state.user.isAuthenticated) return;
+        document.getElementById('profile-name').textContent = this.state.user.name;
+        document.getElementById('profile-email').textContent = this.state.user.email;
+        document.getElementById('profile-phone').textContent = this.state.user.phone;
+        document.getElementById('profile-cpf').textContent = this.state.user.cpf;
+        document.getElementById('profile-address').textContent = this.state.user.address;
+        document.getElementById('profile-points').textContent = this.state.user.points;
+    },
+
+    toggleAuthMock() {
+        if(this.state.user.isAuthenticated) {
+            if(confirm("Deseja realmente sair?")) {
+                this.state.user.isAuthenticated = false;
+                localStorage.removeItem('raizes_user_session');
+                document.getElementById('auth-btn').textContent = 'Entrar';
+                this.showView('view-menu');
+            }
         }
     },
 
