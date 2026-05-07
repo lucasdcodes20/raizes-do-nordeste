@@ -7,9 +7,12 @@
     <title>Raízes do Nordeste | Pedidos</title>
     <!-- Google Fonts: Inter -> Premium Modern Look -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=3">
+    <link rel="stylesheet" href="css/style.css?v=11">
 </head>
 <body class="dark-mode">
+    <div style="background: #ff9800; color: #000; text-align: center; padding: 5px; font-weight: bold; font-size: 12px; position: relative; z-index: 9999;">
+        VERSÃO 3.0 ATUALIZADA - BONEQUINHO ATIVADO
+    </div>
 
     <!-- Navbar -->
     <nav class="navbar">
@@ -189,30 +192,30 @@
                 
                 <form id="auth-view-form" class="auth-form-robust" onsubmit="app.handleAuthSubmit(event)">
                     <!-- Campo Nome (Somente Cadastro) -->
-                    <div class="form-group hidden" id="view-name-group">
+                    <div class="form-group" id="view-name-group">
                         <label for="v-user-name">Nome Completo</label>
                         <input type="text" id="v-user-name" placeholder="Como quer ser chamado?">
                     </div>
 
                     <!-- Telefone / WhatsApp (Somente Cadastro) -->
-                    <div class="form-group hidden" id="view-phone-group">
+                    <div class="form-group" id="view-phone-group">
                         <label for="v-user-phone">WhatsApp / Telefone</label>
                         <input type="tel" id="v-user-phone" placeholder="(00) 00000-0000">
                     </div>
 
                     <div class="form-group">
-                        <label id="label-identifier" for="v-user-email">E-mail ou CPF</label>
-                        <input type="text" id="v-user-email" required placeholder="seu@email.com ou 000.000.000-00">
+                        <label for="v-user-email">E-mail</label>
+                        <input type="email" id="v-user-email" required placeholder="seu@email.com">
                     </div>
 
                     <!-- CPF (Somente Cadastro) -->
-                    <div class="form-group hidden" id="view-cpf-group">
+                    <div class="form-group" id="view-cpf-group">
                         <label for="v-user-cpf">CPF</label>
                         <input type="text" id="v-user-cpf" placeholder="000.000.000-00">
                     </div>
 
                     <!-- Endereço Completo (Somente Cadastro) -->
-                    <div class="form-group hidden" id="view-address-group">
+                    <div class="form-group" id="view-address-group">
                         <label for="v-user-address">Endereço de Entrega</label>
                         <textarea id="v-user-address" placeholder="Rua, número, bairro e referência" rows="3"></textarea>
                     </div>
@@ -254,20 +257,6 @@
         </a>
     </nav>
 
-    <!-- Modal: Login Obrigatório -->
-    <div id="auth-required-modal" class="auth-required-overlay hidden">
-        <div class="auth-required-box">
-            <div class="auth-required-icon">🔒</div>
-            <h3>Login Necessário</h3>
-            <p id="auth-required-msg">Para adicionar ao carrinho, faça login ou cadastre-se.</p>
-            <div class="auth-required-actions">
-                <button class="btn-primary" onclick="document.getElementById('auth-required-modal').classList.add('hidden'); app.openAuthModal('login')">Fazer Login</button>
-                <button class="btn-secondary" onclick="document.getElementById('auth-required-modal').classList.add('hidden'); app.openAuthModal('register')">Cadastrar-se</button>
-                <button class="btn-ghost" onclick="document.getElementById('auth-required-modal').classList.add('hidden')">Cancelar</button>
-            </div>
-        </div>
-    </div>
-
     <!-- LGPD Consent Banner -->
     <div id="lgpd-banner" class="lgpd-banner hidden">
         <div class="lgpd-content">
@@ -280,6 +269,7 @@
     </div>
 
     <!-- Scripts -->
-    <script src="js/app.js?v=5"></script>
+    <script src="js/data.js?v=11"></script>
+    <script src="js/app.js?v=11"></script>
 </body>
 </html>

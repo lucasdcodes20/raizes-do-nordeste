@@ -1,0 +1,8 @@
+*.sql
+.env
+update_pass.sql
+setup_db.sql
+setup_db_v2.sql
+tmp/
+*.log
+*:Zone.Identifier

@@ -1,10 +1,13 @@
-// app.js - Lógica Principal (Modular e Vanilla JS)
+// app.js - Lógica Principal v3.0 (MariaDB + Auth Wall + Login por Email/CPF)
 
 const app = {
     state: {
         cart: [],
-        user: { 
-            isAuthenticated: false, 
+        menu: [],
+        categories: [],
+        user: {
+            isAuthenticated: false,
+            id: null,
             points: 0,
             name: '',
             email: '',
@@ -16,89 +19,146 @@ const app = {
         theme: 'dark'
     },
 
-    init() {
+    // ================================================================
+    // INICIALIZAÇÃO
+    // ================================================================
+    async init() {
         this.cacheDOM();
         this.bindEvents();
-        this.loadSession(); // Carrega usuário se existir
+        this.loadSession();
+        await this.fetchServerData();
         this.renderCategories();
-        this.renderProducts('principais');
-        this.renderPromotions();
+        
+        // Pega a primeira categoria ou principal
+        const firstCatId = this.state.categories.length > 0 ? this.state.categories[0].id : null;
+        this.renderProducts(firstCatId);
+        
+        // this.renderPromotions(); // Agora integrado nos produtos
         this.checkLGPD();
         this.updateCartBadge();
     },
 
-    loadSession() {
-        const savedUser = localStorage.getItem('raizes_user_session');
-        if (savedUser) {
-            this.state.user = JSON.parse(savedUser);
-            document.getElementById('auth-btn').textContent = 'Sair';
+    async fetchServerData() {
+        try {
+            const resCat = await fetch('api/categorias.php');
+            const dataCat = await resCat.json();
+            if(dataCat.success) this.state.categories = dataCat.data;
+
+            const resProd = await fetch('api/produtos.php');
+            const dataProd = await resProd.json();
+            if(dataProd.success) this.state.menu = dataProd.data;
+        } catch(e) {
+            console.error("Erro ao carregar dados do servidor:", e);
         }
     },
 
+    // ================================================================
+    // SESSÃO LOCAL (sincroniza com banco quando online)
+    // ================================================================
+    loadSession() {
+        const saved = localStorage.getItem('raizes_user_session');
+        if (saved) {
+            this.state.user = JSON.parse(saved);
+            this.updateHeaderIcon();
+        }
+    },
+
+    saveSession() {
+        localStorage.setItem('raizes_user_session', JSON.stringify(this.state.user));
+    },
+
+    // ================================================================
+    // DOM CACHE & EVENTS
+    // ================================================================
     cacheDOM() {
-        this.themeToggle = document.getElementById('theme-toggle');
+        this.themeToggle    = document.getElementById('theme-toggle');
         this.categoriesList = document.getElementById('categories-list');
-        this.productsGrid = document.getElementById('products-grid');
+        this.productsGrid   = document.getElementById('products-grid');
         this.promotionsGrid = document.getElementById('promotions-grid');
-        this.cartBadge = document.getElementById('cart-badge');
-        this.cartItemsList = document.getElementById('cart-items');
-        this.views = document.querySelectorAll('.view');
-        this.lgpdBanner = document.getElementById('lgpd-banner');
-        this.authModal = document.getElementById('auth-modal');
+        this.cartBadge      = document.getElementById('cart-badge');
+        this.cartItemsList  = document.getElementById('cart-items');
+        this.views          = document.querySelectorAll('.view');
+        this.lgpdBanner     = document.getElementById('lgpd-banner');
     },
 
     bindEvents() {
         this.themeToggle.addEventListener('click', () => this.toggleTheme());
-        
-        // Auth
+
         document.getElementById('auth-btn').addEventListener('click', () => {
-            if(this.state.user.isAuthenticated) {
-                this.toggleAuthMock();
+            if (this.state.user.isAuthenticated) {
+                this.showView('view-profile');
             } else {
                 this.openAuthModal('login');
             }
         });
 
-        // Modal Payment mock
+        const cartToggle = document.getElementById('cart-toggle');
+        if (cartToggle) {
+            cartToggle.addEventListener('click', () => this.showView('view-cart'));
+        }
+
         document.getElementById('checkout-btn').addEventListener('click', () => {
-            if(this.state.cart.length === 0) return alert("Carrinho vazio!");
+            if (!this.state.user.isAuthenticated) {
+                this.showAuthRequired('finalizar o pedido');
+                return;
+            }
+            if (this.state.cart.length === 0) { alert('Carrinho vazio!'); return; }
             this.showView('view-payment');
         });
 
-        // LGPD Banners
         document.getElementById('lgpd-accept').addEventListener('click', () => this.acceptLGPD());
         document.getElementById('lgpd-decline').addEventListener('click', () => {
             this.lgpdBanner.classList.add('hidden');
         });
 
-        // Fidelity Banner
         const applyDiscountBtn = document.getElementById('apply-discount-btn');
-        if(applyDiscountBtn){
+        if (applyDiscountBtn) {
             applyDiscountBtn.addEventListener('click', () => this.applyLoyaltyDiscount());
         }
     },
 
-    // Controle de Views
+    // ================================================================
+    // CONTROLE DE VIEWS
+    // ================================================================
     showView(viewId) {
-        if(viewId === 'view-profile' && !this.state.user.isAuthenticated) {
-            this.openAuthModal('login');
+        if (viewId === 'view-profile' && !this.state.user.isAuthenticated) {
+            this.showView('view-auth');
             return;
         }
 
         this.views.forEach(v => v.classList.add('hidden'));
         document.getElementById(viewId).classList.remove('hidden');
-        
-        if (viewId === 'view-cart') this.renderCart();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        if (viewId === 'view-cart')    this.renderCart();
         if (viewId === 'view-profile') this.renderProfile();
-        
-        // Atualiza Nav Bottom ativo
-        document.querySelectorAll('.bottom-nav .nav-item').forEach(item => item.classList.remove('active'));
-        if(viewId === 'view-menu') document.querySelectorAll('.bottom-nav .nav-item')[0].classList.add('active');
-        if(viewId === 'view-profile') document.querySelectorAll('.bottom-nav .nav-item')[1].classList.add('active');
-        if(viewId === 'view-cart') document.querySelectorAll('.bottom-nav .nav-item')[2].classList.add('active');
+
+        document.querySelectorAll('.bottom-nav .nav-item').forEach(i => i.classList.remove('active'));
+        if (viewId === 'view-menu') document.querySelectorAll('.bottom-nav .nav-item')[0].classList.add('active');
+        if (viewId === 'view-cart') document.querySelectorAll('.bottom-nav .nav-item')[1].classList.add('active');
+
+        this.checkLGPD();
     },
 
-    // Tema
+    // ================================================================
+    // AUTH WALL — exibe aviso quando visitante tenta usar carrinho
+    // ================================================================
+    showAuthRequired(acao = 'realizar esta ação') {
+        const modal = document.getElementById('auth-required-modal');
+        if (modal) {
+            document.getElementById('auth-required-msg').textContent =
+                `Para ${acao}, você precisa estar logado.`;
+            modal.classList.remove('hidden');
+        } else {
+            // Fallback: redireciona para login diretamente
+            alert(`⚠️ Para ${acao}, faça login ou cadastre-se primeiro.`);
+            this.openAuthModal('login');
+        }
+    },
+
+    // ================================================================
+    // TEMA
+    // ================================================================
     toggleTheme() {
         const body = document.body;
         if (body.classList.contains('dark-mode')) {
@@ -112,57 +172,63 @@ const app = {
         }
     },
 
-    // Troca de Unidade
+    // ================================================================
+    // TROCA DE UNIDADE
+    // ================================================================
     changeUnit() {
         const unit = document.getElementById('store-unit').value;
         const bannerName = document.getElementById('current-unit-name');
-        
         this.productsGrid.innerHTML = '<div class="loader"><div class="spinner"></div><p>Carregando cardápio da unidade...</p></div>';
-        
         setTimeout(() => {
-            const unitName = unit === 'matriz' ? 'Matriz (Centro)' : 'Filial (Shopping Barra)';
-            bannerName.textContent = unitName;
-            this.renderProducts('principais');
+            bannerName.textContent = unit === 'matriz' ? 'Matriz (Centro)' : 'Filial (Shopping Barra)';
+            const activeCat = document.querySelector('.cat-item.active');
+            const catId = activeCat ? activeCat.dataset.id : (this.state.categories.length > 0 ? this.state.categories[0].id : null);
+            this.renderProducts(catId);
         }, 600);
     },
 
-    // Renderização Dinâmica (Cardápio & Promoções)
+    // ================================================================
+    // RENDERIZAÇÃO — Promoções, Categorias, Produtos
+    // ================================================================
     renderPromotions() {
-        if(!this.promotionsGrid) return;
+        if (!this.promotionsGrid) return;
         this.promotionsGrid.innerHTML = '';
-        restaurantData.promotions.forEach(promo => {
+        const ofertas = this.state.menu.filter(p => p.em_oferta);
+        
+        if (ofertas.length === 0) {
+            document.querySelector('.promotions-container').classList.add('hidden');
+            return;
+        } else {
+            document.querySelector('.promotions-container').classList.remove('hidden');
+        }
+
+        ofertas.forEach(promo => {
             this.promotionsGrid.innerHTML += `
                 <div class="promo-card">
                     <div>
-                        <h3>${promo.title}</h3>
-                        <p>${promo.description}</p>
+                        <h3>${promo.nome}</h3>
+                        <p>${promo.descricao}</p>
                     </div>
                     <div>
-                        <span class="promo-price">R$ ${promo.price.toFixed(2).replace('.', ',')}</span>
-                        <button class="btn-primary-small mt-2" onclick="app.addPromoToCart('${promo.id}')">Pedir Combo</button>
+                        <span class="promo-price" style="text-decoration:line-through; font-size: 0.8rem;">R$ ${parseFloat(promo.preco_original).toFixed(2).replace('.', ',')}</span><br>
+                        <span class="promo-price" style="color: var(--danger);">R$ ${parseFloat(promo.preco).toFixed(2).replace('.', ',')}</span>
+                        <button class="btn-primary-small mt-2" onclick="app.addToCart(${promo.id}); app.showView('view-cart');">Pedir Oferta</button>
                     </div>
                 </div>
             `;
         });
     },
 
-    addPromoToCart(promoId) {
-        const promo = restaurantData.promotions.find(p => p.id === promoId);
-        alert(`Combo "${promo.title}" adicionado! (Simulação de múltiplos itens)`);
-        // Aqui simulamos adicionar os itens do combo
-        this.addToCart('p1'); // Baião
-        this.showView('view-cart');
-    },
-
     renderCategories() {
         this.categoriesList.innerHTML = '';
-        restaurantData.categories.forEach((cat, index) => {
+        this.state.categories.forEach((cat, index) => {
             const li = document.createElement('li');
             li.className = `cat-item ${index === 0 ? 'active' : ''}`;
-            li.innerHTML = `${cat.icon} ${cat.name}`;
+            li.dataset.id = cat.id;
+            li.innerHTML = `${cat.icone || ''} ${cat.nome}`;
             li.onclick = (e) => {
                 document.querySelectorAll('.cat-item').forEach(el => el.classList.remove('active'));
-                e.target.classList.add('active');
+                li.classList.add('active');
                 this.renderProducts(cat.id);
             };
             this.categoriesList.appendChild(li);
@@ -171,22 +237,34 @@ const app = {
 
     renderProducts(categoryId) {
         this.productsGrid.innerHTML = '';
-        const filtered = restaurantData.menu.filter(p => p.categoryId === categoryId);
-        
+        const filtered = this.state.menu.filter(p => p.categoria_id == categoryId);
+
+        if(filtered.length === 0) {
+            this.productsGrid.innerHTML = '<p class="text-muted" style="grid-column: 1/-1; text-align:center;">Nenhum produto nesta categoria.</p>';
+            return;
+        }
+
         filtered.forEach(p => {
-            const hasTags = p.tags && p.tags.length > 0;
-            const tagHTML = hasTags ? `<span class="product-tag">${p.tags[0]}</span>` : '';
+            const tagHTML = p.em_oferta ? `<span class="product-tag" style="background:var(--danger)">Oferta! R$ ${parseFloat(p.preco).toFixed(2).replace('.', ',')}</span>` : '';
+            const priceDisplay = p.em_oferta 
+                ? `<span class="product-price" style="text-decoration:line-through; font-size:0.8rem;">R$ ${parseFloat(p.preco_original).toFixed(2).replace('.', ',')}</span> <span class="product-price" style="color:var(--danger)">R$ ${parseFloat(p.preco).toFixed(2).replace('.', ',')}</span>`
+                : `<span class="product-price">R$ ${parseFloat(p.preco).toFixed(2).replace('.', ',')}</span>`;
+
+            const btnHTML = this.state.user.isAuthenticated
+                ? `<button class="add-btn" onclick="app.addToCart(${p.id})">+</button>`
+                : `<button class="add-btn add-btn-locked" onclick="app.showAuthRequired('adicionar ao carrinho')" title="Faça login para comprar">🔒</button>`;
 
             this.productsGrid.innerHTML += `
                 <div class="product-card">
-                    <img src="${p.image}" alt="${p.name}" class="product-img" loading="lazy">
+                    <img src="${p.imagem}" alt="${p.nome}" class="product-img" loading="lazy"
+                         onerror="this.src='assets/baiao.png'">
                     <div class="product-info">
                         ${tagHTML}
-                        <h3 class="product-title">${p.name}</h3>
-                        <p class="product-desc">${p.description}</p>
+                        <h3 class="product-title">${p.nome}</h3>
+                        <p class="product-desc">${p.descricao}</p>
                         <div class="product-footer">
-                            <span class="product-price">R$ ${p.price.toFixed(2).replace('.', ',')}</span>
-                            <button class="add-btn" onclick="app.addToCart('${p.id}')">+</button>
+                            <div>${priceDisplay}</div>
+                            ${btnHTML}
                         </div>
                     </div>
                 </div>
@@ -194,39 +272,40 @@ const app = {
         });
     },
 
-    // Carrinho de Compras
+    // ================================================================
+    // CARRINHO
+    // ================================================================
     addToCart(productId) {
-        const product = restaurantData.menu.find(p => p.id === productId);
-        if(!product) return;
+        if (!this.state.user.isAuthenticated) {
+            this.showAuthRequired('adicionar itens ao carrinho');
+            return;
+        }
 
-        const existing = this.state.cart.find(i => i.id === productId);
-        if(existing) {
+        const product = this.state.menu.find(p => p.id == productId);
+        if (!product) return;
+
+        const existing = this.state.cart.find(i => i.id == productId);
+        if (existing) {
             existing.qty++;
         } else {
             this.state.cart.push({ ...product, qty: 1 });
         }
-        
+
         this.updateCartBadge();
-        
-        // Efeito de pulso no botão do carrinho para feedback
         this.cartBadge.style.transform = 'scale(1.5)';
         setTimeout(() => this.cartBadge.style.transform = 'scale(1)', 200);
     },
 
     updateCartBadge() {
-        const totalItems = this.state.cart.reduce((acc, item) => acc + item.qty, 0);
-        this.cartBadge.textContent = totalItems;
-        if(totalItems > 0) {
-            this.cartBadge.classList.remove('hidden');
-        } else {
-            this.cartBadge.classList.add('hidden');
-        }
+        const total = this.state.cart.reduce((acc, i) => acc + i.qty, 0);
+        this.cartBadge.textContent = total;
+        total > 0 ? this.cartBadge.classList.remove('hidden') : this.cartBadge.classList.add('hidden');
     },
 
     renderCart() {
         this.cartItemsList.innerHTML = '';
-        
-        if(this.state.cart.length === 0) {
+
+        if (this.state.cart.length === 0) {
             this.cartItemsList.innerHTML = '<p class="empty-msg text-muted">Seu carrinho está vazio.</p>';
             this.updateTotals();
             return;
@@ -235,10 +314,10 @@ const app = {
         this.state.cart.forEach((item, index) => {
             this.cartItemsList.innerHTML += `
                 <div class="cart-item">
-                    <img src="${item.image}" alt="${item.name}">
+                    <img src="${item.imagem}" alt="${item.nome}" onerror="this.src='assets/baiao.png'">
                     <div class="cart-item-details">
-                        <h4>${item.name}</h4>
-                        <p class="text-accent text-bold">R$ ${item.price.toFixed(2).replace('.', ',')}</p>
+                        <h4>${item.nome}</h4>
+                        <p class="text-accent text-bold">R$ ${parseFloat(item.preco).toFixed(2).replace('.', ',')}</p>
                     </div>
                     <div class="cart-item-action">
                         <span class="text-muted">Qtd: ${item.qty}</span>
@@ -248,9 +327,8 @@ const app = {
             `;
         });
 
-        // Tratar exibição do banner de fidelidade
         const loyaltyBanner = document.getElementById('loyalty-banner');
-        if(this.state.user.isAuthenticated && this.state.user.points >= 100 && !this.state.discountApplied) {
+        if (this.state.user.isAuthenticated && this.state.user.points >= 100 && !this.state.discountApplied) {
             document.getElementById('user-points').textContent = this.state.user.points;
             loyaltyBanner.style.display = 'flex';
         } else {
@@ -262,26 +340,22 @@ const app = {
 
     removeFromCart(index) {
         this.state.cart.splice(index, 1);
-        // Reseta o desconto se o carrinho ficou vazio
-        if(this.state.cart.length === 0) this.state.discountApplied = false;
+        if (this.state.cart.length === 0) this.state.discountApplied = false;
         this.updateCartBadge();
         this.renderCart();
     },
 
     updateTotals() {
-        const subtotal = this.state.cart.reduce((acc, item) => acc + (item.price * item.qty), 0);
+        const subtotal = this.state.cart.reduce((acc, i) => acc + (parseFloat(i.preco) * i.qty), 0);
         document.getElementById('cart-subtotal').textContent = `R$ ${subtotal.toFixed(2).replace('.', ',')}`;
 
         let total = subtotal;
         let discount = 0;
-
         const discountDisplay = document.getElementById('discount-display');
-        
+
         if (this.state.discountApplied && subtotal > 0) {
-            discount = 5.00; // Desconto fixo por 100 pontos simulado
-            total = subtotal - discount;
-            if(total < 0) total = 0;
-            
+            discount = 5.00;
+            total = Math.max(0, subtotal - discount);
             discountDisplay.classList.remove('hidden');
             document.getElementById('cart-discount').textContent = `- R$ ${discount.toFixed(2).replace('.', ',')}`;
         } else {
@@ -292,168 +366,260 @@ const app = {
         document.getElementById('pay-total-amount').textContent = `R$ ${total.toFixed(2).replace('.', ',')}`;
     },
 
-    // Fidelidade / Autenticação Robusta (Mock)
-    openAuthModal(mode = 'login') {
-        this.authModal.classList.remove('hidden');
+    // ================================================================
+    // AUTENTICAÇÃO — Login por E-mail ou CPF
+    // ================================================================
+    openAuthModal(mode) {
+        this.showView('view-auth');
         this.switchAuthMode(mode);
     },
 
-    closeAuthModal() {
-        this.authModal.classList.add('hidden');
-    },
-
     switchAuthMode(mode) {
-        const title = document.getElementById('auth-modal-title');
-        const desc = document.getElementById('auth-modal-desc');
-        const submitBtn = document.getElementById('auth-submit-btn');
-        const switchText = document.querySelector('.auth-switch');
-        
-        // Grupos de campos extras
-        const nameGroup = document.getElementById('name-group');
-        const phoneGroup = document.getElementById('phone-group');
-        const cpfGroup = document.getElementById('cpf-group');
-        const addressGroup = document.getElementById('address-group');
+        const title      = document.getElementById('auth-view-title');
+        const desc       = document.getElementById('auth-view-desc');
+        const submitBtn  = document.getElementById('view-auth-submit-btn');
+        const switchText = document.getElementById('auth-switch-text');
+        const switchLink = document.getElementById('auth-switch-link');
+        const nameGroup  = document.getElementById('view-name-group');
+        const phoneGroup = document.getElementById('view-phone-group');
+        const cpfGroup   = document.getElementById('view-cpf-group');
+        const addrGroup  = document.getElementById('view-address-group');
 
-        if(mode === 'register') {
-            title.textContent = 'Crie sua conta';
-            desc.textContent = 'Cadastre-se para acumular pontos em cada pedido.';
-            submitBtn.textContent = 'Cadastrar';
-            [nameGroup, phoneGroup, cpfGroup, addressGroup].forEach(g => g.classList.remove('hidden'));
-            switchText.innerHTML = 'Já tem conta? <a href="#" onclick="app.switchAuthMode(\'login\')">Faça Login</a>';
-        } else {
-            title.textContent = 'Bem-vindo visse?';
-            desc.textContent = 'Faça seu login para gerenciar seus pedidos.';
-            submitBtn.textContent = 'Entrar';
-            [nameGroup, phoneGroup, cpfGroup, addressGroup].forEach(g => g.classList.add('hidden'));
-            switchText.innerHTML = 'Ainda não tem conta? <a href="#" onclick="app.switchAuthMode(\'register\')">Cadastre-se</a>';
-        }
-    },
-
-    handleAuthSubmit(e) {
-        e.preventDefault();
-        const mode = document.getElementById('auth-submit-btn').textContent === 'Cadastrar' ? 'register' : 'login';
-        
-        const email = document.getElementById('user-email').value;
-        const pass = document.getElementById('user-pass').value;
+        // Label do identificador muda conforme o modo
+        const identLabel = document.getElementById('label-identifier');
 
         if (mode === 'register') {
-            this.state.user = {
-                isAuthenticated: true,
-                points: 150,
-                name: document.getElementById('user-name').value,
-                email: email,
-                phone: document.getElementById('user-phone').value,
-                cpf: document.getElementById('user-cpf').value,
-                address: document.getElementById('user-address').value
-            };
+            if (identLabel) identLabel.textContent = 'E-mail';
+            title.textContent       = 'Crie sua conta';
+            desc.textContent        = 'Cadastre-se para acumular pontos em cada pedido.';
+            submitBtn.textContent   = 'Finalizar Cadastro';
+            [nameGroup, phoneGroup, cpfGroup, addrGroup].forEach(g => g && g.classList.remove('hidden'));
+            switchText.textContent  = 'Já tem conta?';
+            switchLink.textContent  = 'Faça Login';
+            switchLink.setAttribute('onclick', "app.switchAuthMode('login')");
         } else {
-            // Mock Login (aceita qualquer coisa se não houver cadastro salvo)
-            const saved = localStorage.getItem('raizes_user_session');
-            if (saved) {
-                this.state.user = JSON.parse(saved);
-                this.state.user.isAuthenticated = true;
-            } else {
-                this.state.user = {
-                    isAuthenticated: true,
-                    points: 50,
-                    name: email.split('@')[0],
-                    email: email,
-                    phone: '-',
-                    cpf: '-',
-                    address: '-'
-                };
-            }
+            if (identLabel) identLabel.textContent = 'E-mail ou CPF';
+            title.textContent       = 'Bem-vindo visse?';
+            desc.textContent        = 'Entre com seu e-mail ou CPF cadastrado.';
+            submitBtn.textContent   = 'Entrar';
+            [nameGroup, phoneGroup, cpfGroup, addrGroup].forEach(g => g && g.classList.add('hidden'));
+            switchText.textContent  = 'Ainda não tem conta?';
+            switchLink.textContent  = 'Cadastre-se';
+            switchLink.setAttribute('onclick', "app.switchAuthMode('register')");
         }
+    },
 
-        localStorage.setItem('raizes_user_session', JSON.stringify(this.state.user));
-        document.getElementById('auth-btn').textContent = 'Sair';
-        this.closeAuthModal();
-        this.showView('view-profile');
-        alert(`Bem-vindo(a), ${this.state.user.name}!`);
+    async handleAuthSubmit(e) {
+        e.preventDefault();
+        const isRegister = document.getElementById('view-auth-submit-btn').textContent === 'Finalizar Cadastro';
+        const submitBtn  = document.getElementById('view-auth-submit-btn');
+        submitBtn.disabled = true;
+        submitBtn.textContent = isRegister ? 'Cadastrando...' : 'Entrando...';
+
+        const email_ou_cpf = document.getElementById('v-user-email').value.trim();
+        const senha        = document.getElementById('v-user-pass').value;
+
+        try {
+            if (isRegister) {
+                const nome     = document.getElementById('v-user-name').value.trim();
+                const telefone = document.getElementById('v-user-phone').value.trim();
+                const cpf      = document.getElementById('v-user-cpf').value.trim();
+                const endereco = document.getElementById('v-user-address').value.trim();
+
+                if (!nome || !telefone || !cpf || !endereco) {
+                    alert('Preencha todos os campos do cadastro!');
+                    return;
+                }
+
+                const resp = await fetch('api/cadastro.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nome, email: email_ou_cpf, cpf, telefone, endereco, senha })
+                });
+                const data = await resp.json();
+
+                if (!data.success) {
+                    alert('❌ ' + data.message);
+                    return;
+                }
+
+                this._setUserFromApi(data.usuario);
+
+            } else {
+                // LOGIN — identifica por email ou CPF
+                const resp = await fetch('api/login.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ identificador: email_ou_cpf, senha })
+                });
+                const data = await resp.json();
+
+                if (!data.success) {
+                    alert('❌ ' + data.message);
+                    return;
+                }
+
+                this._setUserFromApi(data.usuario);
+            }
+
+            this.saveSession();
+            this.updateHeaderIcon();
+            this.renderProducts(
+                document.querySelector('.cat-item.active')?.dataset?.id || 'principais'
+            );
+            this.showView('view-profile');
+            alert(`✅ Bem-vindo(a), ${this.state.user.name}!`);
+
+        } catch (err) {
+            alert('Erro de conexão com o servidor. Verifique se o Apache está rodando.');
+            console.error(err);
+        } finally {
+            submitBtn.disabled    = false;
+            submitBtn.textContent = isRegister ? 'Finalizar Cadastro' : 'Entrar';
+        }
+    },
+
+    _setUserFromApi(u) {
+        this.state.user = {
+            isAuthenticated: true,
+            id:      u.id,
+            name:    u.nome,
+            email:   u.email,
+            cpf:     u.cpf,
+            phone:   u.telefone,
+            address: u.endereco,
+            points:  parseInt(u.pontos) || 0
+        };
     },
 
     renderProfile() {
-        if (!this.state.user.isAuthenticated) return;
-        document.getElementById('profile-name').textContent = this.state.user.name;
-        document.getElementById('profile-email').textContent = this.state.user.email;
-        document.getElementById('profile-phone').textContent = this.state.user.phone;
-        document.getElementById('profile-cpf').textContent = this.state.user.cpf;
-        document.getElementById('profile-address').textContent = this.state.user.address;
-        document.getElementById('profile-points').textContent = this.state.user.points;
+        const u = this.state.user;
+        document.getElementById('profile-name').textContent    = u.name    || 'Usuário';
+        document.getElementById('profile-email').textContent   = u.email   || '-';
+        document.getElementById('profile-address').textContent = u.address || '-';
+        document.getElementById('profile-phone').textContent   = u.phone   || '-';
+        document.getElementById('profile-cpf').textContent     = u.cpf     || '-';
+        document.getElementById('profile-points').textContent  = u.points  || 0;
     },
 
-    toggleAuthMock() {
-        if(this.state.user.isAuthenticated) {
-            if(confirm("Deseja realmente sair?")) {
-                this.state.user.isAuthenticated = false;
-                localStorage.removeItem('raizes_user_session');
-                document.getElementById('auth-btn').textContent = 'Entrar';
-                this.showView('view-menu');
-            }
+    updateHeaderIcon() {
+        const icon = document.querySelector('.profile-icon');
+        if (!icon) return;
+        icon.textContent = this.state.user.isAuthenticated ? '👤✅' : '👤';
+    },
+
+    logoutUser() {
+        if (confirm('Deseja realmente sair da sua conta?')) {
+            this.state.user = { isAuthenticated: false, id: null, points: 0, name: '', email: '', phone: '', cpf: '', address: '' };
+            this.state.cart = [];
+            this.state.discountApplied = false;
+            localStorage.removeItem('raizes_user_session');
+            this.updateHeaderIcon();
+            this.updateCartBadge();
+            this.renderProducts('principais');
+            this.showView('view-menu');
         }
     },
 
+    // ================================================================
+    // FIDELIDADE
+    // ================================================================
     applyLoyaltyDiscount() {
         this.state.discountApplied = true;
-        this.state.user.points -= 100; // Consome pontos
-        alert('Desconto Aplicado com sucesso!');
+        this.state.user.points -= 100;
+        this.saveSession();
+
+        // Sincroniza pontos com o banco
+        if (this.state.user.id) {
+            fetch('api/atualizar_pontos.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ usuario_id: this.state.user.id, pontos: this.state.user.points })
+            }).catch(() => {});
+        }
+
+        alert('✅ Desconto de R$5,00 aplicado!');
         this.renderCart();
     },
 
-    // Pagamento
+    // ================================================================
+    // PAGAMENTO
+    // ================================================================
     processPayment(method) {
-        const loader = document.getElementById('payment-loader');
+        const loader  = document.getElementById('payment-loader');
         const success = document.getElementById('payment-success');
         const options = document.querySelector('.payment-options');
+        const unidade = document.getElementById('store-unit')?.value || 'matriz';
 
         options.classList.add('hidden');
         loader.classList.remove('hidden');
 
-        // Simula call de API externa com timeout
-        setTimeout(() => {
+        setTimeout(async () => {
             loader.classList.add('hidden');
             success.classList.remove('hidden');
-            
-            // Lógica Pós-Pagamento -> Gera Pontos
-            const totalCents = this.state.cart.reduce((acc, item) => acc + (item.price * item.qty), 0);
-            const gainedPoints = Math.floor(totalCents / restaurantData.capabilities.loyaltyPointsRatio);
-            if(this.state.user.isAuthenticated) {
+
+            const subtotal     = this.state.cart.reduce((a, i) => a + parseFloat(i.preco) * i.qty, 0);
+            const desconto     = this.state.discountApplied ? 5.00 : 0;
+            const total        = Math.max(0, subtotal - desconto);
+            const pontos_usados= this.state.discountApplied ? 100 : 0;
+            const gainedPoints = Math.floor(total * 10);
+
+            if (this.state.user.isAuthenticated) {
                 this.state.user.points += gainedPoints;
                 document.getElementById('earned-points').textContent = gainedPoints;
+
+                // Salva pedido no banco
+                try {
+                    const resp = await fetch('api/salvar_pedido.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            usuario_id:       this.state.user.id,
+                            itens:            this.state.cart,
+                            subtotal, desconto, total,
+                            metodo_pagamento: method,
+                            pontos_usados, unidade
+                        })
+                    });
+                    const data = await resp.json();
+                    if (data.success) {
+                        this.state.user.points = data.pontos_atuais;
+                        document.getElementById('order-number').textContent = data.numero_pedido;
+                    }
+                } catch (err) {
+                    console.warn('Pedido não salvo no servidor:', err);
+                    document.getElementById('order-number').textContent = Math.floor(1000 + Math.random() * 9000);
+                }
+
+                this.saveSession();
             } else {
                 document.getElementById('earned-points').textContent = 0;
+                document.getElementById('order-number').textContent = Math.floor(1000 + Math.random() * 9000);
             }
 
-            document.getElementById('order-number').textContent = Math.floor(1000 + Math.random() * 9000);
-            
-            // Limpa carrinho
             this.state.cart = [];
             this.state.discountApplied = false;
             this.updateCartBadge();
-            
+
         }, 2000);
     },
 
     closeOrder() {
-        // Reseta View de pagamento para status normal
         document.querySelector('.payment-options').classList.remove('hidden');
         document.getElementById('payment-success').classList.add('hidden');
         this.showView('view-status');
     },
 
-    // LGPD e Privacidade
+    // ================================================================
+    // LGPD
+    // ================================================================
     checkLGPD() {
-        const consent = localStorage.getItem('lgpd_consent');
-        if(!consent && restaurantData.establishmentDetails.lgpdPolicyActive) {
-            this.lgpdBanner.classList.remove('hidden');
-        }
+        this.lgpdBanner.classList.remove('hidden');
     },
 
     acceptLGPD() {
-        localStorage.setItem('lgpd_consent', 'true');
         this.lgpdBanner.classList.add('hidden');
     }
 };
 
-// Inicializa a aplicação
 document.addEventListener('DOMContentLoaded', () => app.init());
