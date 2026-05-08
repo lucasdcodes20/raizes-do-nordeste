@@ -1,15 +1,14 @@
-
 // mock.js - Intercepta fetch() e usa data.js quando PHP não disponível
 
 const _originalFetch = window.fetch;
 
 window.fetch = async function(url, options) {
-    // Só intercepta chamadas para a API local
+
     if (typeof url === 'string' && url.startsWith('api/')) {
 
         // GET api/categorias.php
         if (url.includes('categorias.php')) {
-	    return mockResponse({ success: true, data: restaurantData.categories });
+            return mockResponse({ success: true, data: restaurantData.categories });
         }
 
         // GET api/produtos.php
@@ -17,27 +16,39 @@ window.fetch = async function(url, options) {
             return mockResponse({ success: true, data: restaurantData.menu });
         }
 
+        // POST api/cadastro.php
+        if (url.includes('cadastro.php')) {
+            const body = JSON.parse(options?.body || '{}');
+            return mockResponse({
+                success: true,
+                message: "Cadastro realizado com sucesso!",
+                usuario: {
+                    id: 1,
+                    nome: body.nome || "Usuário Demo",
+                    email: body.email || "demo@raizes.com.br",
+                    cpf: body.cpf || "000.000.000-00",
+                    telefone: body.telefone || "(74) 99999-9999",
+                    endereco: body.endereco || "Rua do Nordeste, 100",
+                    pontos: 0
+                }
+            });
+        }
+
         // POST api/login.php
         if (url.includes('login.php')) {
             const body = JSON.parse(options?.body || '{}');
             return mockResponse({
                 success: true,
-                user: {
+                usuario: {
                     id: 1,
-                    name: "Usuário Demo",
-                    email: body.email || "demo@raizes.com.br",
-                    cpf: body.cpf || "000.000.000-00",
-                    phone: "(11) 99999-9999",
-                    address: "Rua do Nordeste, 100",
-                    points: 250
-                },
-                token: "mock-token-demo"
+                    nome: "Usuário Demo",
+                    email: body.identificador || "demo@raizes.com.br",
+                    cpf: "000.000.000-00",
+                    telefone: "(74) 99999-9999",
+                    endereco: "Rua do Nordeste, 100",
+                    pontos: 250
+                }
             });
-        }
-
-        // POST api/cadastro.php
-        if (url.includes('cadastro.php')) {
-            return mockResponse({ success: true, message: "Cadastro realizado com sucesso!" });
         }
 
         // POST api/salvar_pedido.php
@@ -58,7 +69,7 @@ window.fetch = async function(url, options) {
         return mockResponse({ success: true });
     }
 
-    // Fora da API — comportamento normal (Google Fonts, etc.)
+    // Fora da API — comportamento normal
     return _originalFetch(url, options);
 };
 
