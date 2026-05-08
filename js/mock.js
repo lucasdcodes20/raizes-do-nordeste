@@ -14,7 +14,7 @@ window.fetch = async function(url, options) {
 
         // GET api/produtos.php
         if (url.includes('produtos.php')) {
-            return mockResponse(restaurantData.menu);
+            return mockResponse({ success: true, data: restaurantData.menu });
         }
 
         // POST api/login.php
