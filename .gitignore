@@ -1,8 +1,6 @@
 *.sql
 .env
 update_pass.sql
-setup_db.sql
-setup_db_v2.sql
+*:Zone.Identifier
 tmp/
 *.log
-*:Zone.Identifier
