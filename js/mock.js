@@ -9,7 +9,7 @@ window.fetch = async function(url, options) {
 
         // GET api/categorias.php
         if (url.includes('categorias.php')) {
-            return mockResponse(restaurantData.categories);
+	    return mockResponse({ success: true, data: restaurantData.categories });
         }
 
         // GET api/produtos.php
