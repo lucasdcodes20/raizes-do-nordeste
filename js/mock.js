@@ -51,15 +51,17 @@ window.fetch = async function(url, options) {
             });
         }
 
-        // POST api/salvar_pedido.php
+	// POST api/salvar_pedido.php
         if (url.includes('salvar_pedido.php')) {
+            const body = JSON.parse(options?.body || '{}');
+            const pontos = Math.floor((body.total || 0) * 10);
             return mockResponse({
                 success: true,
-                orderId: "PED-" + Math.floor(Math.random() * 9000 + 1000),
-                message: "Pedido recebido! Aguarde confirmação."
+                numero_pedido: "PED-" + Math.floor(Math.random() * 9000 + 1000),
+                pontos_atuais: 250 + pontos,
+                message: "Pedido salvo com sucesso!"
             });
         }
-
         // POST api/atualizar_pontos.php
         if (url.includes('atualizar_pontos.php')) {
             return mockResponse({ success: true });
