@@ -17,7 +17,7 @@ const restaurantData = {
     ],
     menu: [
         {
-            id: "p1",
+            id: 1,
             categoria_id: "principais",
             nome: "Baião de Dois Completo",
             descricao: "Feijão verde, arroz, nata rural, carne de sol desfiada, queijo coalho e bastante coentro.",
@@ -26,7 +26,7 @@ const restaurantData = {
             tags: ["Mais Vendido"]
         },
         {
-            id: "p2",
+            id: 2,
             categoria_id: "principais",
             nome: "Carne de Sol com Macaxeira",
             descricao: "Tradição raiz! Carne de sol artesanal acebolada com macaxeira frita crocante na manteiga de garrafa.",
@@ -35,7 +35,7 @@ const restaurantData = {
             tags: ["Favorito"]
         },
         {
-            id: "p3",
+            id: 3,
             categoria_id: "principais",
             nome: "Bobó de Camarão Baiano",
             descricao: "Camarões frescos mergulhados num creme denso de azeite de dendê, mandioca e leite de coco.",
@@ -44,7 +44,7 @@ const restaurantData = {
             tags: ["Premium"]
         },
         {
-            id: "p4",
+            id: 4,
             categoria_id: "porcoes",
             nome: "Dadinhos de Tapioca",
             descricao: "Porção com 12 dadinhos de tapioca e queijo coalho fritinhos, servidos com melaço e geleia de pimenta.",
@@ -52,7 +52,7 @@ const restaurantData = {
             imagem: "assets/dadinhos.png"
         },
         {
-            id: "p5",
+            id: 5,
             categoria_id: "porcoes",
             nome: "Acarajé Genuíno (Porção com 4)",
             descricao: "Mini acarajés fritos no azeite de dendê, servidos com vatapá, caruru e camarão seco.",
@@ -60,7 +60,7 @@ const restaurantData = {
             imagem: "assets/acaraje.jpg"
         },
         {
-            id: "d1",
+            id: 11,
             categoria_id: "drinks",
             nome: "Cajuína Artesanal",
             descricao: "Legítima cajuína piauiense servida bem gelada (500ml).",
@@ -68,7 +68,7 @@ const restaurantData = {
             imagem: "https://images.unsplash.com/photo-1509315811345-672d83ef2fbc?auto=format&fit=crop&w=300&q=80"
         },
         {
-            id: "d2",
+            id: 12,
             categoria_id: "drinks",
             nome: "Coca-cola",
             descricao: "Para refrescar, bem gelada.",
