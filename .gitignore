@@ -4,3 +4,4 @@ update_pass.sql
 *:Zone.Identifier
 tmp/
 *.log
+*.md
