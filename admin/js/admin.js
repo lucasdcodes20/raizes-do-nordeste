@@ -300,7 +300,7 @@ const adminApp = {
     // --- DOCS (TCC) ---
     async loadDocs() {
         try {
-            const res = await fetch('TCC_Final_Lucas_Santos.md');
+            const res = await fetch('TCC_Final_Raizes_Nordeste.md');
             const text = await res.text();
             document.getElementById('document-content').innerHTML = marked.parse(text);
         } catch(e) {
