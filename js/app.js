@@ -48,7 +48,17 @@ const app = {
             const dataProd = await resProd.json();
             if(dataProd.success) this.state.menu = dataProd.data;
         } catch(e) {
-            console.error("Erro ao carregar dados do servidor:", e);
+            console.error("Erro ao carregar dados do servidor. Ativando modo Demonstração (GitHub Pages):", e);
+            // Fallback para GitHub Pages ou quando o servidor PHP/DB não estiver rodando
+            this.state.categories = [
+                { id: 'principais', nome: 'Pratos Principais', icone: '🥘' },
+                { id: 'bebidas', nome: 'Bebidas', icone: '🥤' }
+            ];
+            this.state.menu = [
+                { id: 1, categoria_id: 'principais', nome: 'Baião de Dois Completo', descricao: 'Carne de sol, queijo coalho, macaxeira e farofa', preco: 45.90, preco_original: 55.90, em_oferta: 1, imagem: 'assets/baiao.png' },
+                { id: 2, categoria_id: 'principais', nome: 'Carne de Sol com Fritas', descricao: 'Acompanha arroz, feijão tropeiro e vinagrete', preco: 38.50, preco_original: 38.50, em_oferta: 0, imagem: 'assets/carne.png' },
+                { id: 3, categoria_id: 'bebidas', nome: 'Coca-Cola 2L', descricao: 'Refrigerante gelado', preco: 12.00, preco_original: 12.00, em_oferta: 0, imagem: 'assets/coca.png' }
+            ];
         }
     },
 
